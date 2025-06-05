@@ -1,0 +1,41 @@
+# Development environment override
+version: '3.8'
+
+services:
+  php:
+    build:
+      context: ./api
+      target: frankenphp_dev
+    ports:
+      - "8000:80"  # ← expose le port de Caddy vers localhost:8000
+    volumes:
+      - ./api:/app
+      - /app/var
+      - ./api/frankenphp/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./api/frankenphp/conf.d/app.dev.ini:/usr/local/etc/php/conf.d/app.dev.ini:ro
+      # - /app/vendor  # ← Optionnel, à activer sur Mac/Windows pour perf
+    environment:
+      MERCURE_EXTRA_DIRECTIVES: demo
+      XDEBUG_MODE: "${XDEBUG_MODE:-off}"
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    tty: true
+
+  pwa:
+    build:
+      context: ./pwa
+      target: dev
+    volumes:
+      - ./pwa:/srv/app
+    environment:
+      API_PLATFORM_CREATE_CLIENT_ENTRYPOINT: http://php
+      API_PLATFORM_CREATE_CLIENT_OUTPUT: .
+      WATCHPACK_POLLING: "true"
+  
+  ###> doctrine/doctrine-bundle ###
+  database:
+    ports:
+      - target: 5432
+        published: 5432
+        protocol: tcp
+###< doctrine/doctrine-bundle ###
